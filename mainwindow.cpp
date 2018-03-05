@@ -8,7 +8,9 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    taskManager(nullptr),
+    timerRunning(false)
 {
     ui->setupUi(this);
 
@@ -16,6 +18,15 @@ MainWindow::MainWindow(QWidget *parent) :
     createMenus();
 
     setWindowTitle(tr("Task Timer"));
+
+    //TODo: make thi load the last used task list instead
+    TaskLoader loader;
+    taskList = loader.loadTasksFromFile("morning_tasks.tsk");
+    for(auto task : taskList)
+    {
+        QListWidget* listWidget = ui->listWidget;
+        listWidget->addItem(task.getName() + " : " + task.getDescription() + " (" + task.getDuration().toString() + ")");
+    }
 }
 
 MainWindow::~MainWindow()
@@ -36,11 +47,13 @@ void MainWindow::createActions()
     saveAct->setStatusTip(tr("Save the document to disk"));
     connect(saveAct, &QAction::triggered, this, &MainWindow::save);
 
-    //buttons
-    m_clearConnection = QPushButton::connect(ui->clearTaskButton, SIGNAL (released()), this, SLOT (handleClearTaskButton()));
-    m_addTaskConnection = QPushButton::connect(ui->addTaskButton, SIGNAL (released()), this, SLOT (addCurrentTaskToList()));
+    //Task setup butons
+    clearConnection = QPushButton::connect(ui->clearTaskButton, SIGNAL (released()), this, SLOT (handleClearTaskButton()));
+    addTaskConnection = QPushButton::connect(ui->addTaskButton, SIGNAL (released()), this, SLOT (addCurrentTaskToList()));
+    removeTaskConnection = QPushButton::connect(ui->removeTaskButton, SIGNAL (released()), this, SLOT (removeSelectedTask()));
 
-    m_removeTaskConnection = QPushButton::connect(ui->removeTaskButton, SIGNAL (released()), this, SLOT (removeSelectedTask()));
+    //Timer button
+    timerButtonConnection = QPushButton::connect(ui->startTasksButton, SIGNAL (released()), this, SLOT (handleTimerButton()));
 }
 
 void MainWindow::createMenus()
@@ -50,6 +63,8 @@ void MainWindow::createMenus()
     fileMenu->addAction(saveAct);
     fileMenu->addSeparator();
 }
+
+#pragma mark - menu actions
 
 void MainWindow::open()
 {
@@ -87,6 +102,8 @@ void MainWindow::save()
     TaskLoader loader;
     loader.saveTasksToFile(fileName, taskList);
 }
+
+#pragma mark - button actions
 
 void MainWindow::handleClearTaskButton()
 {
@@ -135,4 +152,46 @@ void MainWindow::removeSelectedTask()
         delete ui->listWidget->takeItem(rowId);
         taskList.removeAt(rowId);
     }
+}
+
+void MainWindow::handleTimerButton()
+{
+    if(taskManager == nullptr)
+    {
+        taskManager = new TaskManager(taskList);
+
+        timerUpdateConnection = connect(taskManager, &TaskManager::onTaskStarted, this, &MainWindow::onNewTaskStarts);
+        timerDetailsConnection = connect(taskManager, &TaskManager::onTaskTimeChanged, this, &MainWindow::onCurrentTimerUpdates);
+    }
+
+    if(timerRunning)
+    {
+        taskManager->startTasks();
+        delete taskManager;
+        taskManager = nullptr;
+        ui->startTasksButton->setText("Start");
+    }
+    else
+    {
+       taskManager->startTasks();
+       ui->startTasksButton->setText("Stop");
+    }
+
+    timerRunning = !timerRunning;
+}
+
+void MainWindow::onCurrentTimerUpdates(QString timeString)
+{
+    ui->timerLabel->setText(timeString);
+}
+
+void MainWindow::onCurrentTimerEnds()
+{
+
+}
+
+void MainWindow::onNewTaskStarts(QString name, QString desc)
+{
+    ui->taskNameLabel->setText(name);
+    ui->taskDescLabel->setText(desc);
 }

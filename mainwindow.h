@@ -6,8 +6,9 @@
 #include <QPushButton>
 #include <QTextEdit>
 #include <QList>
+#include <QThread>
 
-#include "ktask.h"
+#include "taskmanager.h"
 
 namespace Ui {
 class MainWindow;
@@ -26,16 +27,22 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-protected:
-
 private slots:
+    //File menu actions
     void open();
     void save();
 
+    //Task list setup
     void handleClearTaskButton();
     void addCurrentTaskToList();
-
     void removeSelectedTask();
+
+    //Timer tab
+    void handleTimerButton();
+
+    void onNewTaskStarts(QString name, QString desc);
+    void onCurrentTimerUpdates(QString timeString);
+    void onCurrentTimerEnds();
 
 private:
     void createActions();
@@ -53,9 +60,19 @@ private:
 
     QList<kTask> taskList;
 
-    QMetaObject::Connection m_clearConnection;
-    QMetaObject::Connection m_addTaskConnection;
-    QMetaObject::Connection m_removeTaskConnection;
+    //task setup button connections
+    QMetaObject::Connection clearConnection;
+    QMetaObject::Connection addTaskConnection;
+    QMetaObject::Connection removeTaskConnection;
+
+    //Timer buton connection
+    QMetaObject::Connection timerButtonConnection;
+    QMetaObject::Connection timerUpdateConnection;
+    QMetaObject::Connection timerDetailsConnection;
+
+    //Timer
+    TaskManager* taskManager;
+    bool timerRunning;
 
 };
 

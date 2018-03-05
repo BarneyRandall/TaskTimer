@@ -1,29 +1,38 @@
-#ifndef TASKMANAGER_H
-#define TASKMANAGER_H
+#ifndef TIMERMANAGER_H
+#define TIMERMANAGER_H
 
-#include <string>
+#include <QObject>
+#include <QList>
 
-#include <QMap>
+#include "tasktimer.h"
 
-namespace kTaskTimer
+class TaskManager : public QObject
 {
-    struct Task
-    {
-        std::string name;
-        std::string description;
+    Q_OBJECT
+public:
+    TaskManager(QList<kTask> taskList);
 
-        time_t duraction;//in seconds
-    };
+    void startTasks();
+    void stopTasks();
+    void pauseTasks();
 
-    class TaskManager
-    {
-    public:
-        TaskManager();
+signals:
+    void onTaskStarted(QString name, QString description);
+    void onTaskTimeChanged(QString timeString);
 
-        void loadTaskList();
+private slots:
+    void onCurrentTimerUpdates(qint64 secondsRemaining);
+    void onCurrentTimerEnds();
 
-    private:
-        QMap<std::string, Task> taskList;
-    };
-}
-#endif // TASKMANAGER_H
+private:
+    void startTask(int id);
+
+private:
+    kTask* currentTask;
+    int currentTaskId;
+
+    QList<kTask> taskList;
+    QList<TaskTimer*> timerList;
+};
+
+#endif // TIMERMANAGER_H

@@ -26,15 +26,17 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    taskmanager.cpp \
     ktask.cpp \
-    taskloader.cpp
+    taskloader.cpp \
+    tasktimer.cpp \
+    taskmanager.cpp
 
 HEADERS += \
         mainwindow.h \
-    taskmanager.h \
     ktask.h \
-    taskloader.h
+    taskloader.h \
+    tasktimer.h \
+    taskmanager.h
 
 FORMS += \
         mainwindow.ui
